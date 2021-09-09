@@ -95,8 +95,12 @@ class BaseLayerTest(keras_parameterized.TestCase):
     except tf.errors.OperatorNotAllowedInGraphError as e:
       if 'iterating over `tf.Tensor` is not allowed' in str(e):
         raised_error = True
+      elif 'Calling iter()' in str(e):
+        raised_error = True
     except TypeError as e:
       if 'attempting to use Python control flow' in str(e):
+        raised_error = True
+      elif 'Attempting to use Python control flow' in str(e):
         raised_error = True
     self.assertTrue(raised_error)
 
@@ -1411,7 +1415,8 @@ class AutographControlFlowTest(keras_parameterized.TestCase):
     class MyLayer(base_layer.Layer):
 
       def call(self, inputs, training=None):
-        with test_obj.assertRaisesRegex(TypeError, 'Tensor.*as.*bool'):
+        with test_obj.assertRaisesRegex(TypeError,
+                                        'Tensor.*as.*bool|Calling bool()'):
           if tf.constant(False):
             return inputs * 1.
         return inputs * 0.
