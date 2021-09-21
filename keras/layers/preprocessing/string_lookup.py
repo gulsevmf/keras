@@ -303,6 +303,7 @@ class StringLookup(index_lookup.IndexLookup):
                mask_token=None,
                oov_token="[UNK]",
                vocabulary=None,
+               vocabulary_dtype=tf.string,
                idf_weights=None,
                encoding=None,
                invert=False,
@@ -310,15 +311,15 @@ class StringLookup(index_lookup.IndexLookup):
                sparse=False,
                pad_to_max_tokens=False,
                **kwargs):
-    allowed_dtypes = [tf.string]
+    if tf.dtypes.as_dtype(vocabulary_dtype) != tf.string:
+      raise ValueError("`vocabulary_dtype` must be string. "
+                       f"Received: {vocabulary_dtype}")
 
-    if "dtype" in kwargs and kwargs["dtype"] not in allowed_dtypes:
-      raise ValueError(
-          f"The value of the `dtype` for `StringLookup` may "
-          f"only be one of {allowed_dtypes}, but received {kwargs['dtype']}.")
-
-    if "dtype" not in kwargs:
-      kwargs["dtype"] = tf.string
+    # Legacy versions of the StringLookup layer set layer dtype to string,
+    # instead of the output type. If we see this, clear it.
+    if "dtype" in kwargs and (kwargs["dtype"] == tf.string or
+                              kwargs["dtype"] == "string"):
+      del kwargs["dtype"]
 
     if encoding is None:
       encoding = "utf-8"
@@ -331,6 +332,7 @@ class StringLookup(index_lookup.IndexLookup):
         mask_token=mask_token,
         oov_token=oov_token,
         vocabulary=vocabulary,
+        vocabulary_dtype=vocabulary_dtype,
         idf_weights=idf_weights,
         invert=invert,
         output_mode=output_mode,

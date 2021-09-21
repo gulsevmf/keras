@@ -15,6 +15,7 @@
 """Keras string lookup preprocessing layer."""
 
 # pylint: disable=g-classes-have-attributes
+# pylint: disable=g-direct-tensorflow-import
 
 from keras.engine import base_preprocessing_layer
 from keras.layers.preprocessing import index_lookup
@@ -309,13 +310,23 @@ class IntegerLookup(index_lookup.IndexLookup):
                mask_token=None,
                oov_token=-1,
                vocabulary=None,
+               vocabulary_dtype=tf.int64,
                idf_weights=None,
                invert=False,
                output_mode="int",
                sparse=False,
                pad_to_max_tokens=False,
                **kwargs):
-    allowed_dtypes = [tf.int64]
+    if not tf.dtypes.as_dtype(vocabulary_dtype).is_integer:
+      raise ValueError("`vocabulary_dtype` must be an integer dtype. "
+                       f"Received: {vocabulary_dtype}")
+
+    # Legacy versions of the IntegerLookup layer set layer dtype to int64,
+    # instead of the output type. If we see this and output mode is not "int",
+    # clear the setting.
+    if output_mode != "int" and "dtype" in kwargs and (
+        kwargs["dtype"] == tf.string or kwargs["dtype"] == "int64"):
+      del kwargs["dtype"]
 
     # Support deprecated args for this layer.
     if "max_values" in kwargs:
@@ -335,13 +346,6 @@ class IntegerLookup(index_lookup.IndexLookup):
                           "oov_value is deprecated, use oov_token instead.", 1)
       oov_token = kwargs["oov_value"]
       del kwargs["oov_value"]
-
-    if "dtype" in kwargs and kwargs["dtype"] not in allowed_dtypes:
-      raise ValueError("The value of the dtype argument for IntegerLookup may "
-                       "only be one of %s." % (allowed_dtypes,))
-
-    if "dtype" not in kwargs:
-      kwargs["dtype"] = tf.int64
 
     # If max_tokens is set, the token must be greater than 1 - otherwise we
     # are creating a 0-element vocab, which doesn't make sense.
@@ -366,6 +370,7 @@ class IntegerLookup(index_lookup.IndexLookup):
         mask_token=mask_token,
         oov_token=oov_token,
         vocabulary=vocabulary,
+        vocabulary_dtype=tf.int64,
         idf_weights=idf_weights,
         invert=invert,
         output_mode=output_mode,

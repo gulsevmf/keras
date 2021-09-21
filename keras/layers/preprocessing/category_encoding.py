@@ -204,5 +204,6 @@ class CategoryEncoding(base_layer.Layer):
           inputs,
           output_mode=self.output_mode,
           depth=depth,
+          dtype=self.compute_dtype,
           sparse=self.sparse,
           count_weights=count_weights)
