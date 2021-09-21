@@ -73,6 +73,7 @@ class BaseDenseAttention(Layer):
     self.causal = causal
     self.dropout = dropout
     self.supports_masking = True
+    self._random_generator = backend.RandomGenerator()
 
   def _calculate_scores(self, query, key):
     """Calculates attention scores.
@@ -126,7 +127,7 @@ class BaseDenseAttention(Layer):
     weights = tf.nn.softmax(scores)
 
     def dropped_weights():
-      return tf.nn.dropout(weights, rate=self.dropout)
+      return self._random_generator.dropout(weights, rate=self.dropout)
 
     weights = control_flow_util.smart_cond(training, dropped_weights,
                                            lambda: tf.identity(weights))

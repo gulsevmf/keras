@@ -1132,6 +1132,7 @@ class DropoutRNNCellMixin:
 
   def __init__(self, *args, **kwargs):
     self._create_non_trackable_mask_cache()
+    self._random_generator = backend.RandomGenerator()
     super(DropoutRNNCellMixin, self).__init__(*args, **kwargs)
 
   @tf.__internal__.tracking.no_automatic_dependency_tracking
@@ -1181,6 +1182,7 @@ class DropoutRNNCellMixin:
 
   def _create_dropout_mask(self, inputs, training, count=1):
     return _generate_dropout_mask(
+        self._random_generator,
         tf.ones_like(inputs),
         self.dropout,
         training=training,
@@ -1188,6 +1190,7 @@ class DropoutRNNCellMixin:
 
   def _create_recurrent_dropout_mask(self, inputs, training, count=1):
     return _generate_dropout_mask(
+        self._random_generator,
         tf.ones_like(inputs),
         self.recurrent_dropout,
         training=training,
@@ -2945,9 +2948,9 @@ class LSTM(RNN):
     return cls(**config)
 
 
-def _generate_dropout_mask(ones, rate, training=None, count=1):
+def _generate_dropout_mask(generator, ones, rate, training=None, count=1):
   def dropped_inputs():
-    return backend.dropout(ones, rate)
+    return generator.dropout(ones, rate)
 
   if count > 1:
     return [

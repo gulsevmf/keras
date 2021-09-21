@@ -5246,9 +5246,8 @@ def dropout(x, level, noise_shape=None, seed=None):
   Returns:
       A tensor.
   """
-  if seed is None:
-    seed = np.random.randint(10e6)
-  return tf.nn.dropout(x, rate=level, noise_shape=noise_shape, seed=seed)
+  return RandomGenerator(seed=seed).dropout(
+      x, rate=level, noise_shape=noise_shape)
 
 
 @keras_export('keras.backend.l2_normalize')
